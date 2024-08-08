@@ -7,8 +7,10 @@ fun main(args: Array<String>) {
     var serverSocket = ServerSocket(6379)
     serverSocket.reuseAddress = true
 
-    val client = serverSocket.accept()
-    handleRequest(client)
+    while (true) {
+        val client = serverSocket.accept()
+        Thread { handleRequest(client) }.start()
+    }
 }
 
 fun handleRequest(client: Socket) {
