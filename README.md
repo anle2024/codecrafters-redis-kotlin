@@ -33,3 +33,14 @@ Note: This section is for stages 2 and beyond.
    `src/main/kotlin/Main.kt`.
 1. Commit your changes and run `git push origin master` to submit your solution
    to CodeCrafters. Test output will be streamed to your terminal.
+
+# Notes
+- To clone the project from remote repo:
+```
+git clone https://git.codecrafters.io/0c6d7ca1c45e393c codecrafters-redis-kotlin
+```
+- Test: 
+```
+codecrafters test
+```
+
