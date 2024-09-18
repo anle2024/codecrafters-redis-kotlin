@@ -7,13 +7,31 @@ val keyValueStore = mutableMapOf<String, ValueWithExpiry>()
 data class ValueWithExpiry(val value: String, val expiryTime: Long)
 
 fun main(args: Array<String>) {
-    var serverSocket = ServerSocket(6379)
+    val port = parsePort(args)
+    println("Starting server on port $port")
+    startServer(port)
+}
+
+fun startServer(port: Int) {
+    val serverSocket = ServerSocket(port)
     serverSocket.reuseAddress = true
 
     while (true) {
         val client = serverSocket.accept()
         Thread { handleRequest(client) }.start()
     }
+}
+
+fun parsePort(args: Array<String>): Int {
+    if (args.isEmpty()) {
+        return 6379
+    }
+
+    if(args[0] == "--port") {
+        return args[1].toInt()
+    }
+
+    return 6379
 }
 
 fun handleRequest(client: Socket) {
