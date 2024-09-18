@@ -51,6 +51,7 @@ fun handleRequest(client: Socket) {
             "ECHO" -> formatBulkString(request.arguments.joinToString(""))
             "SET" -> handleSetRequest(request.arguments)
             "GET" -> handleGetRequest(request.arguments)
+            "INFO" -> handleInfoRequest(request.arguments)
             else -> return
         }
 
@@ -59,6 +60,11 @@ fun handleRequest(client: Socket) {
         outputClient.write(response.toByteArray())
         outputClient.flush()
     }
+}
+
+fun handleInfoRequest(arguments: List<String>): String {
+    val role = "role:master"
+    return formatBulkString(role)
 }
 
 fun handleSetRequest(arguments: List<String>): String {
