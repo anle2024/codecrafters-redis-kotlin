@@ -2,7 +2,9 @@ import java.io.BufferedReader
 import java.net.ServerSocket
 import java.net.Socket
 
-val keyValueStore = mutableMapOf<String, String>()
+val keyValueStore = mutableMapOf<String, ValueWithExpiry>()
+
+data class ValueWithExpiry(val value: String, val expiryTime: Long)
 
 fun main(args: Array<String>) {
     var serverSocket = ServerSocket(6379)
@@ -26,7 +28,7 @@ fun handleRequest(client: Socket) {
             return
         }
 
-        val response = when(request.command) {
+        val response = when (request.command) {
             "PING" -> "+PONG\r\n"
             "ECHO" -> formatBulkString(request.arguments.joinToString(""))
             "SET" -> handleSetRequest(request.arguments)
@@ -44,14 +46,40 @@ fun handleRequest(client: Socket) {
 fun handleSetRequest(arguments: List<String>): String {
     val key = arguments[0]
     val value = arguments[1]
-    keyValueStore[key] = value
-    return "+OK\r\n"
+    val simpleString = "+OK\r\n"
+
+    if (arguments.size == 2) {
+        keyValueStore[key] = ValueWithExpiry(value, Long.MAX_VALUE)
+        return simpleString
+    }
+
+    val isExpiry = arguments[2].lowercase() == "px"
+
+    if (!isExpiry) {
+        return "-ERR syntax error"
+    }
+
+    val expiryTime = arguments[3].toLong()
+    val expiryInMs = System.currentTimeMillis() + expiryTime
+
+    keyValueStore[key] = ValueWithExpiry(value, expiryInMs)
+
+    return simpleString
 }
 
 fun handleGetRequest(arguments: List<String>): String {
     val key = arguments[0]
-    val value = keyValueStore[key]?.let { formatBulkString(it) } ?: "\$-1\r\n"
-    return value
+    val nullBulkString = "$-1\r\n"
+
+    keyValueStore[key]?.let {
+        if (it.expiryTime < System.currentTimeMillis()) {
+            keyValueStore.remove(key)
+            return nullBulkString
+        }
+        return formatBulkString(it.value)
+    }
+
+    return nullBulkString
 }
 
 data class RedisRequest(val command: String, val arguments: List<String>)
